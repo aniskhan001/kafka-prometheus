@@ -1,0 +1,91 @@
+# This is not a recommended configuration, and further support should be available
+# from the Prometheus and Grafana communities.
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: grafana
+  labels:
+    app: strimzi
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:6.2.5
+        ports:
+        - name: grafana
+          containerPort: 3000
+          protocol: TCP
+        volumeMounts:
+        - name: grafana-data
+          mountPath: /var/lib/grafana
+        - name: grafana-logs
+          mountPath: /var/log/grafana
+        - name: config
+          mountPath: "/etc/grafana/provisioning/datasources/datasources.yaml"
+          subPath: datasources.yaml
+        - name: config
+          mountPath: "/etc/grafana/provisioning/dashboards/providers.yaml"
+          subPath: provider.yaml
+        - name: dashboard-config
+          mountPath: "/var/lib/grafana/dashboards/dashboard-cpu-usage.json"
+          subPath: "dashboard-cpu-usage.json"
+        - name: dashboard-config
+          mountPath: "/var/lib/grafana/dashboards/dashboard-strimzi-kafka.json"
+          subPath: "dashboard-strimzi-kafka.json"
+        - name: dashboard-config
+          mountPath: "/var/lib/grafana/dashboards/dashboard-strimzi-zookeeper.json"
+          subPath: "dashboard-strimzi-zookeeper.json"
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+      volumes:
+      - name: grafana-data
+        emptyDir: {}
+      - name: grafana-logs
+        emptyDir: {}
+      - name: config
+        configMap:
+          defaultMode: 420
+          name: grafana-config
+      - name: dashboard-config
+        configMap:
+          defaultMode: 0777
+          name: grafana-dashboard-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  labels:
+    app: strimzi
+spec:
+  ports:
+  - name: grafana
+    port: 3000
+    targetPort: 3000
+    protocol: TCP
+  selector:
+    name: grafana
+  type: ClusterIP
