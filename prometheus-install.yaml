@@ -83,13 +83,7 @@ spec:
       containers:
         - name: prometheus
           image: prom/prometheus:v2.7.1
-          resources:
-            requests:
-              memory: 200Mi
-              cpu: 100m
-            limits:
-              memory: 400Mi
-              cpu: 200m
+          resources: {}
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--storage.tsdb.path=/prometheus/"
