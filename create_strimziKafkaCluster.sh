@@ -41,8 +41,8 @@ cat strimzi-cluster-operator.yaml \
 
 echo "creating kafka and zookeeper clusters"
 cat kafka-persistent.yaml \
-  | sed "0,/replicas: 1/s//replicas: $brokers/1" \
-  | sed "0,/replicas: 1/s//replicas: $zknodes/1" \
+  | sed "s/replicas:.*/replicas: $zknodes/" \
+  | sed -e "/replicas:.*/{s//replicas: $brokers/;:a" -e '$!N;$!ba' -e '}' \
   | kubectl apply -n $namespace -f -
 
 echo "creating Prometheus deployment"
